@@ -1,4 +1,9 @@
-# next-i18next
+# next-i18next-edge
+
+Simple modified version that is ready for edge/app dir workloads
+
+- Removes i18next-fs-backend -> no fs allowed on edge
+- Adds support for server translations for RSC
 
 [![CircleCI](https://circleci.com/gh/i18next/next-i18next.svg?style=shield)](https://circleci.com/gh/i18next/next-i18next)
 [![Package Quality](https://npm.packagequality.com/shield/next-i18next.svg)](https://packagequality.com/#?package=next-i18next)

@@ -1,11 +1,11 @@
 import i18n from 'i18next'
-import i18nextFSBackend from 'i18next-fs-backend'
+import i18nextHttpBackend from 'i18next-http-backend'
 
 import {
-  InternalConfig,
   CreateClientReturn,
-  InitPromise,
   I18n,
+  InitPromise,
+  InternalConfig,
 } from '../types'
 
 let globalInstance: I18n
@@ -25,12 +25,20 @@ export default (config: InternalConfig): CreateClientReturn => {
   let initPromise: InitPromise
 
   if (!instance.isInitialized) {
-    const hasCustomBackend = config?.use?.some(
-      b => b.type === 'backend'
+    // TODO: Add default backend? we might not need one
+    instance.use(
+      // i18nextResourcesBackend(
+      //   async (language: string, namespace: string) => {
+      //     console.log('CALLED!', language, namespace)
+      //     const data = await import(
+      //       `${config.localePath}/${language}/${namespace}.json`
+      //     )
+
+      //     return data
+      //   }
+      // )
+      i18nextHttpBackend
     )
-    if (!hasCustomBackend) {
-      instance.use(i18nextFSBackend)
-    }
 
     config?.use?.forEach(x => instance.use(x))
     if (typeof config.onPreInitI18next === 'function') {

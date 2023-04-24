@@ -1,12 +1,12 @@
+import type { GetStaticProps, InferGetStaticPropsType } from 'next'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
-import type { GetStaticProps, InferGetStaticPropsType } from 'next'
 
-import { useTranslation, Trans } from 'next-i18next'
+import { Trans, useTranslation } from 'next-i18next'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 
-import { Header } from '../components/Header'
 import { Footer } from '../components/Footer'
+import { Header } from '../components/Header'
 
 type Props = {
   // Add custom props here
@@ -110,10 +110,20 @@ export const getStaticProps: GetStaticProps<Props> = async ({
   locale,
 }) => ({
   props: {
-    ...(await serverSideTranslations(locale ?? 'en', [
-      'common',
-      'footer',
-    ])),
+    ...(await serverSideTranslations(
+      locale ?? 'en',
+      ['common', 'footer'],
+      {
+        i18n: {
+          defaultLocale: 'en',
+          locales: ['en', 'de'],
+        },
+        localePath: 'http://localhost:3000/locales',
+        defaultNS: 'common',
+        debug: true,
+        namespaces: ['common'],
+      }
+    )),
   },
 })
 

@@ -1,7 +1,7 @@
-import { defaultConfig } from './defaultConfig'
-import { InternalConfig, UserConfig } from '../types'
-import { getFallbackForLng, unique } from '../utils'
 import { FallbackLngObjList } from 'i18next'
+import { InternalConfig, UserConfig } from '../types'
+import { unique } from '../utils'
+import { defaultConfig } from './defaultConfig'
 
 const deepMergeObjects = ['backend', 'detection'] as (keyof Pick<
   UserConfig,
@@ -34,6 +34,7 @@ export const createConfig = (
     localeExtension,
     localePath,
     nonExplicitSupportedLngs,
+    namespaces,
   } = combinedConfig
 
   const locales = combinedConfig.locales.filter(l => l !== 'default')
@@ -106,78 +107,18 @@ export const createConfig = (
     combinedConfig.preload = locales
 
     if (!hasCustomBackend) {
-      const fs = require('fs')
-      const path = require('path')
-
       //
       // Validate defaultNS
       // https://github.com/i18next/next-i18next/issues/358
       //
-      if (
-        typeof defaultNS === 'string' &&
-        typeof lng !== 'undefined'
-      ) {
-        if (typeof localePath === 'string') {
-          const defaultLocaleStructure = localeStructure
-            .replace(`${prefix}lng${suffix}`, lng)
-            .replace(`${prefix}ns${suffix}`, defaultNS)
-          const defaultFile = `/${defaultLocaleStructure}.${localeExtension}`
-          const defaultNSPath = path.join(localePath, defaultFile)
-          const defaultNSExists = fs.existsSync(defaultNSPath)
-          const fallback = getFallbackForLng(
-            lng,
-            combinedConfig.fallbackLng
-          )
-          const defaultFallbackNSExists = fallback.some(f => {
-            const fallbackFile = defaultFile.replace(lng, f)
-            const defaultNSPath = path.join(localePath, fallbackFile)
-            return fs.existsSync(defaultNSPath)
-          })
-          if (
-            !defaultNSExists &&
-            !defaultFallbackNSExists &&
-            process.env.NODE_ENV !== 'production'
-          ) {
-            throw new Error(
-              `Default namespace not found at ${defaultNSPath}`
-            )
-          }
-        } else if (typeof localePath === 'function') {
-          const defaultNSPath = localePath(lng, defaultNS, false)
-          const defaultNSExists = fs.existsSync(defaultNSPath)
-          const fallback = getFallbackForLng(
-            lng,
-            combinedConfig.fallbackLng
-          )
-          const defaultFallbackNSExists = fallback.some(f => {
-            const defaultNSPath = localePath(f, defaultNS, false)
-            return fs.existsSync(defaultNSPath)
-          })
-          if (
-            !defaultNSExists &&
-            !defaultFallbackNSExists &&
-            process.env.NODE_ENV !== 'production'
-          ) {
-            throw new Error(
-              `Default namespace not found at ${defaultNSPath}`
-            )
-          }
-        }
-      }
 
       //
       // Set server side backend
       //
       if (typeof localePath === 'string') {
         combinedConfig.backend = {
-          addPath: path.resolve(
-            process.cwd(),
-            `${localePath}/${localeStructure}.missing.${localeExtension}`
-          ),
-          loadPath: path.resolve(
-            process.cwd(),
-            `${localePath}/${localeStructure}.${localeExtension}`
-          ),
+          addPath: `${localePath}/${localeStructure}.missing.${localeExtension}`,
+          loadPath: `${localePath}/${localeStructure}.${localeExtension}`,
         }
       } else if (typeof localePath === 'function') {
         combinedConfig.backend = {
@@ -202,39 +143,8 @@ export const createConfig = (
           )
         }
 
-        const getNamespaces = (locales: string[]): string[] => {
-          const getLocaleNamespaces = (p: string) => {
-            let ret: string[] = []
-
-            if (!fs.existsSync(p)) return ret
-
-            fs.readdirSync(p).map((file: string) => {
-              const joinedP = path.join(p, file)
-              if (fs.statSync(joinedP).isDirectory()) {
-                const subRet = getLocaleNamespaces(joinedP).map(
-                  n => `${file}/${n}`
-                )
-                ret = ret.concat(subRet)
-                return
-              }
-              ret.push(file.replace(`.${localeExtension}`, ''))
-            })
-            return ret
-          }
-
-          const namespacesByLocale = locales.map(locale =>
-            getLocaleNamespaces(
-              path.resolve(process.cwd(), `${localePath}/${locale}`)
-            )
-          )
-
-          const allNamespaces = []
-          for (const localNamespaces of namespacesByLocale) {
-            allNamespaces.push(...localNamespaces)
-          }
-
-          return unique(allNamespaces)
-        }
+        const getNamespaces = (): string[] =>
+          unique([`${defaultNS}`, ...(namespaces ?? [])])
 
         if (
           localeStructure.indexOf(`${prefix}lng${suffix}`) >
@@ -245,12 +155,9 @@ export const createConfig = (
           )
         }
 
-        combinedConfig.ns = getNamespaces(
-          unique([
-            lng,
-            ...getFallbackForLng(lng, combinedConfig.fallbackLng),
-          ])
-        )
+        console.log('namespaces', getNamespaces())
+
+        combinedConfig.ns = getNamespaces()
       }
     }
   } else {

@@ -1,16 +1,13 @@
-import fs from 'fs'
-import path from 'path'
-
 import { createConfig } from './config/createConfig'
-import createClient from './createClient/node'
+import createClient from './createClient/server'
 
 import { globalI18n } from './appWithTranslation'
 
-import { UserConfig, SSRConfig } from './types'
-import { getFallbackForLng, unique } from './utils'
 import { Namespace } from 'i18next'
+import { SSRConfig, UserConfig } from './types'
+import { getFallbackForLng, unique } from './utils'
 
-let DEFAULT_CONFIG_PATH = './next-i18next.config.js'
+let DEFAULT_CONFIG_PATH = '/next-i18next.config.js'
 
 /**
  * One line expression like `const { I18NEXT_DEFAULT_CONFIG_PATH: DEFAULT_CONFIG_PATH = './next-i18next.config.js' } = process.env;`
@@ -39,15 +36,14 @@ export const serverSideTranslations = async (
   }
 
   let userConfig = configOverride
-  const configPath = path.resolve(DEFAULT_CONFIG_PATH)
 
-  if (!userConfig && fs.existsSync(configPath)) {
-    userConfig = await import(configPath)
+  if (!userConfig) {
+    userConfig = await import(DEFAULT_CONFIG_PATH)
   }
 
   if (userConfig === null) {
     throw new Error(
-      `next-i18next was unable to find a user config at ${configPath}`
+      `next-i18next was unable to find a user config at ${DEFAULT_CONFIG_PATH}`
     )
   }
 
@@ -56,12 +52,8 @@ export const serverSideTranslations = async (
     lng: initialLocale,
   })
 
-  const {
-    localeExtension,
-    localePath,
-    fallbackLng,
-    reloadOnPrerender,
-  } = config
+  const { localePath, fallbackLng, reloadOnPrerender, namespaces } =
+    config
 
   if (reloadOnPrerender) {
     await globalI18n?.reloadResources()
@@ -90,24 +82,10 @@ export const serverSideTranslations = async (
         'Must provide namespacesRequired to serverSideTranslations when using a function as localePath'
       )
     }
-
-    const getLocaleNamespaces = (path: string) =>
-      fs.existsSync(path)
-        ? fs
-            .readdirSync(path)
-            .map(file => file.replace(`.${localeExtension}`, ''))
-        : []
-
-    const namespacesByLocale = Object.keys(initialI18nStore)
-      .map(locale =>
-        getLocaleNamespaces(
-          path.resolve(process.cwd(), `${localePath}/${locale}`)
-        )
-      )
-      .flat()
-
-    namespacesRequired = unique(namespacesByLocale)
+    namespacesRequired = unique(namespaces ?? [])
   }
+
+  console.log(i18n.services.resourceStore.data)
 
   namespacesRequired.forEach(ns => {
     for (const locale in initialI18nStore) {

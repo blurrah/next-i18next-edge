@@ -1,18 +1,18 @@
 /* tslint:disable no-explicit-any */
 import {
-  I18nContext,
-  useTranslation,
-  Trans,
-  withTranslation,
-  WithTranslation as ReactI18nextWithTranslation,
-  Translation,
-} from 'react-i18next'
-import {
-  InitOptions,
   i18n as I18NextClient,
   TFunction as I18NextTFunction,
+  InitOptions,
   TypeOptions,
 } from 'i18next'
+import {
+  I18nContext,
+  WithTranslation as ReactI18nextWithTranslation,
+  Trans,
+  Translation,
+  useTranslation,
+  withTranslation,
+} from 'react-i18next'
 import { appWithTranslation, i18n } from './'
 
 /**
@@ -44,6 +44,7 @@ export type UserConfig = {
         missing: boolean
       ) => string)
   localeStructure?: string
+  namespaces?: string[]
   onPreInitI18next?: (i18n: I18n) => void
   reloadOnPrerender?: boolean
   serializeConfig?: boolean

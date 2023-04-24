@@ -2,7 +2,7 @@
  * @jest-environment node
  */
 
-import createClientNode from './node'
+import createClientNode from './server'
 
 let onPreInitI18nextCalled: any
 
